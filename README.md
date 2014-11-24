@@ -4,6 +4,8 @@ A simple shell script for backing up a MySQL database with daily dumps that are 
 
 ## Setup
 
+Note: If using Ubuntu, call the script using `bash` instead of `sh`
+
 Clone this repo into a directory that will contain the backup files and log file
 
 Copy settings.cfg.sample to settings.cfg
