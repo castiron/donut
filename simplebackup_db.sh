@@ -5,10 +5,6 @@
 scriptFilePath=$(readlink -f $0)
 scriptDir=$(dirname ${scriptFilePath})
 
-dateToday=$(date +"%m_%d_%Y")
-dateDrop=$(date +%m_%d_%Y -d "1 week ago")
-backupFile="${scriptDir}/${backupFileName}_${dateToday}.sql"
-dropFile="${scriptDir}/${backupFileName}_${dateDrop}.sql"
 logFile="${scriptDir}/backup.log"
 configFile="${scriptDir}/settings.cfg"
 
@@ -25,6 +21,11 @@ then
 else
     source ${configFile}
 fi
+
+dateToday=$(date +"%m_%d_%Y")
+dateDrop=$(date +%m_%d_%Y -d "1 week ago")
+backupFile="${scriptDir}/${backupFileName}_${dateToday}.sql"
+dropFile="${scriptDir}/${backupFileName}_${dateDrop}.sql"
 
 echo "[STARTING BACKUP]" >> ${logFile}
 echo "Backup file: ${backupFile}" >> ${logFile}
