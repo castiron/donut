@@ -1,5 +1,9 @@
+# Editor
 .idea/
+*.sublime-project
+*.sublime-workspace
 
+# Project
 settings.cfg
 backup.log
 *.sql
