@@ -1,6 +1,21 @@
-# simplebackup_db
+```
+########## Donut #########
+#                        #
+#	     .-;;;;;-.       #
+#	   .;;;;;;;;;;;.     #
+#	  /;;;' o o ';;;\    #
+#	 ;;;; o /^\ o ;;;;   #
+#	 ;;;; o \_/ o ;;;;   #
+#	  \;;;. o o .;;;/    #
+#	   ';;;;;;;;;;;'     #
+#	     '-;;;;;-'       #
+#                        # 
+##########################
 
-A simple shell script for backing up a MySQL database with daily dumps that are retained for 1 week.
+# ASCII Art credit: http://www.chris.com/ascii/joan/www.geocities.com/SoHo/7373/transp.html#tire
+```
+
+A simple shell script for backing up a database with daily dumps that are retained for 1 week.
 
 ## Setup
 
