@@ -15,18 +15,44 @@
 # ASCII Art credit: http://www.chris.com/ascii/joan/www.geocities.com/SoHo/7373/transp.html#tire
 ```
 
-A simple shell script for backing up a database with daily dumps that are retained for 1 week.
+A script for backing up database(s) with daily dumps that are retained for 1 week.
+
+Currently supports MySQL and PostgreSQL
 
 ## Setup
 
-Note: If using Ubuntu, call the script using `bash` instead of `sh`
+Create a `config/` directory in the same directory as donut or create a `config` symlink
 
-Clone this repo into a directory that will contain the backup files and log file
+Add a config file for each database that you want to backup. The format should like the following:
+```
+type=mysql
+host=
+schema=
+user=
+password=
+```
 
-Copy settings.cfg.sample to settings.cfg
+or
 
-Modify settings.cfg as needed
+```
+type=postgresql
+host=
+schema=
+user=
+password=
+```
 
-Setup the script to run on a 24hr interval using something like crontab
+Note: The actual file name and extension are arbitrary. Donut will loop through the `config/` directory and attempt to 
+use each file as config.
 
-Done
+You can run the script manually to test your configuration: `./donut`
+
+By default the .sql backups are stored in `backup/` in the same directory as donut. If you want, you could create a
+symlink for `backup` to persist the backups elsewhere.
+
+Once satisfied with the configuration of your database(s) setup a cron job to run donut every 24hrs. 
+ 
+Donut also can create instant backups by passing `ondemand` like so: `./donut ondemand`
+This will append `ONDEMAND` to the .sql file so it will not conflict with your daily backups.
+
+Enoy!
