@@ -76,7 +76,7 @@ main() {
                 mysqldump --defaults-extra-file=${donut_config} -h${host} -u${user} ${schema} > ${backup_file}
                 echo "" > ${donut_config}
                 ;;
-            postgres)
+            postgresql)
                 pg_dump -h${host} -U${user} --no-password  ${schema} > ${backup_file}
                 ;;
             *)
