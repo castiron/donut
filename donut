@@ -1,63 +1,89 @@
 #!/bin/bash
 # Author - clark@castironcoding.com
 # Purpose - Generates daily backup with retention for 1 week. Eventually smooch will replace this.
+henchman_version="v1.2.4"
+henchman_location="/tmp"
+henchman_debug=false
+main() {
+    local working_dir
+    local config_dir
+    local backup_dir
+    local config_files
+    local donut_config
+    local days_of_retention=7
+    local today_date=$(date +"%m_%d_%Y")
+    local drop_date
+    local ondemand=false
 
-scriptFilePath=$(readlink -f $0)
-scriptDir=$(dirname ${scriptFilePath})
 
-logFile="${scriptDir}/backup.log"
-configFile="${scriptDir}/settings.cfg"
+    hm_do hm_get_working_directory && working_dir=${hm_return}
+    config_dir="${working_dir}/config"
+    backup_dir="${working_dir}/backup"
+    donut_config="${working_dir}/.donut-config"
 
-if [ -f ${logFile} ];
-then
-    touch ${logFile}
-fi
+    hm_do hm_get_files_in_directory ${config_dir} && config_files=${hm_return}
+    if [[ ${config_files[*]} == '' ]]; then echo "No config files found in ${config_dir}" && exit 1; fi
 
-if [ ! -f ${configFile} ];
-then
-    echo '[ERROR!]' >> ${logFile}
-    echo 'The file settings.cfg not found!' >> ${logFile}
-    exit 1
-else
-    source ${configFile}
-fi
+    hm_do hm_directory_create_if_not_present ${backup_dir}
+    hm_do hm_file_create_if_not_present ${donut_config}
 
-dateToday=$(date +"%m_%d_%Y")
-dateDrop=$(date +%m_%d_%Y -d "1 week ago")
-backupFile="${scriptDir}/${backupFileName}_${dateToday}.sql"
-dropFile="${scriptDir}/${backupFileName}_${dateDrop}.sql"
-
-if [ $# -gt 0 ]
-then
-    if [[ ${1} == 'ondemand' ]]
-    then
-        echo "Creating ondemand .sql dump of: ${dbName}"
-        onDemandBackupFile="${scriptDir}/${backupFileName}_ONDEMAND_${dateToday}.sql"
-        echo "Filename: ${onDemandBackupFile}"
-        mysqldump -h${dbHost} -u${dbUser} -p${dbPass} ${dbName} > ${onDemandBackupFile}
-        echo "Tada. All done."
-        exit 0
+    if [[ "$OSTYPE" == "linux-gnu" ]]; then
+        drop_date=$(date +%m_%d_%Y -d "1 week ago")
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+        drop_date=$(date -r $[ $(date +%s) - (${days_of_retention} * (60*60*24))] +"%m_%d_%Y")
     else
-        echo "Gibberish."
-        echo "Pass 'ondemand' as argument for one off .sql dump."
+        echo "${OSTYPE} is not supported."
         exit 1
     fi
-fi
+
+     if [  ${main_params_count} -gt 0 ]
+     then
+         if [[ ${main_params[0]} == 'ondemand' ]]
+         then
+             echo "Creating ondemand backup(s)."
+             ondemand=true
+         else
+             echo "Gibberish. ${main_params[0]} is not a valid argument."
+             echo "Pass 'ondemand' as an argument for instant backup(s)."
+             exit 1
+         fi
+     fi
 
 
-echo "[STARTING BACKUP]" >> ${logFile}
-echo "Backup file: ${backupFile}" >> ${logFile}
-echo "Drop file: ${dropFile}" >> ${logFile}
+    purge_old_backup() {
+        echo "Attempting to purge: ${1}"
+        if [ -f ${1} ];
+        then
+            echo "Removing backup: ${1}"
+            rm ${1}
+        fi
+    }
 
-mysqldump -h${dbHost} -u${dbUser} -p${dbPass} ${dbName} > ${backupFile}
+    for config_file in ${config_files[@]}; do
+        local backup_file
+        local drop_file
+        source "${config_dir}/${config_file}"
+        if [[ ${ondemand} == true ]]; then
+            backup_file="${backup_dir}/${schema}_ONDEMAND_${today_date}.sql"
+        else
+            backup_file="${backup_dir}/${schema}_${today_date}.sql"
+            drop_file="${backup_dir}/${schema}_${drop_date}.sql"
+            purge_old_backup ${drop_file}
+        fi
+        case "${type}" in
+            mysql)
+                echo -e "[CLIENT]\npassword=${password}" > ${donut_config}
+                mysqldump --defaults-extra-file=${donut_config} -h${host} -u${user} ${schema} > ${backup_file}
+                echo "" > ${donut_config}
+                ;;
+            postgres)
+                pg_dump -h${host} -U${user} --no-password  ${schema} > ${backup_file}
+                ;;
+            *)
+                echo "Unknown database type: ${type}"
+        esac
+    done
 
-if [ -f ${dropFile} ];
-then
-    echo "Removing backup: ${dropFile}" >> ${logFile}
-    rm ${dropFile}
-fi
-
-echo "[DONE]" >> ${logFile}
-echo " " >> ${logFile}
-
-exit 0
+}
+henchman_load() { local hm_url="https://raw.githubusercontent.com/castiron/henchman/${henchman_version}/henchman";local hm_local_file="${henchman_location}/henchman-${henchman_version}";echo -e "Attempting to fetch Henchman ${henchman_version}\n";if [ -e ${hm_local_file} ];then echo -e "Henchman ${henchman_version} is ready for action.";else if hash curl 2>/dev/null;then curl ${hm_url} -o ${hm_local_file};elif hash wget 2>/dev/null;then wget ${hm_url} -O ${hm_local_file};else echo "Error! curl or wget required to fetch Henchman.";fi;fi;source ${hm_local_file}; }
+henchman_load $@

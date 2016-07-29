@@ -4,6 +4,6 @@
 *.sublime-workspace
 
 # Project
-settings.cfg
-backup.log
-*.sql
+config/*
+backup/*
+.donut-config
