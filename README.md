@@ -55,4 +55,4 @@ Once satisfied with the configuration of your database(s) setup a cron job to ru
 Donut also can create instant backups by passing `ondemand` like so: `./donut ondemand`
 This will append `ONDEMAND` to the .sql file so it will not conflict with your daily backups.
 
-Enoy!
+Enjoy!
