@@ -1,0 +1,298 @@
+#!/bin/bash
+###############
+## Henchman ###
+###############
+#    _____    #
+#   |     |   #
+# __|_____|__ #
+#   | _ _ |   #
+#  {   ^   }  #
+#   | +++ |   #
+#   |_____|   #
+###############
+#####################################################
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#~~because BASHing should be handled by a henchman~~#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#####################################################
+
+
+# Release Information
+# v1.2.4
+# Spurlock
+
+
+###########
+## Setup ##
+###########
+
+## Store parameters passed to parent script being executed
+main_params_count=$#
+main_params_list=$@
+main_params=()
+if [ ${main_params_count} -gt 0 ]
+then
+    for var in "$@"
+    do
+        main_params+=(${var})
+    done
+fi
+
+hm_return=''
+
+PID=$$
+
+henchman() {
+    ############
+    ## Public ##
+    ############
+
+    ##
+    # Wrapper that handles responses from Henchman functions
+    #
+    ##
+   hm_do() {
+        local response
+        local response_code
+        response=$($*)
+        response_code=$?
+        if [ ${henchman_debug} == true ]; then echo -e "[HENCHMAN DEBUG]\nCall:\n hm_do $*\nResponse code: ${response_code}\nResponse:\n ${response}\n[/HENCHMAN DEBUG]"; fi
+        if [[ ${response_code} == 0 ]]
+        then
+            hm_return=${response}
+        else
+            echo -e ${response}
+            _hm_halt
+        fi
+    }
+
+
+    #############
+    ## Private ##
+    #############
+
+    ##
+    # Determine if env var exists and has a value
+    #
+    # ${1} - env var
+    # return - boolean
+    ##
+    hm_env_var_exist?() {
+        _hm_require_params $# "$*" 1 0
+        local env_var=${1}
+        local response=false
+        if [[ "${!env_var}" != "" ]]
+        then
+            response=true
+        fi
+        echo ${response}
+    }
+    echo $!
+
+    ##
+    # Determine if file exists
+    #
+    # ${1} - filename with/without path
+    # return - boolean
+    ##
+    hm_file_exist?() {
+        _hm_require_params $# "$*" 1 0
+        local file_path=${1}
+        local response=false
+        if [ -e ${file_path} ]
+        then
+            response=true
+        fi
+        echo ${response}
+    }
+
+    ##
+    # Create file if it doesn't exist
+    #
+    # ${1} - filename with/without path
+    # return - none
+    ##
+    hm_file_create_if_not_present() {
+        _hm_require_params $# "$*" 1 0
+        local file_path=${1}
+        if [ ! -e ${file_path} ]
+        then
+            touch ${file_path}
+        fi
+    }
+
+    ##
+    # Determine if directory exists
+    #
+    # ${1} - directory with/without path
+    # return - boolean
+    ##
+    hm_directory_exist?() {
+        _hm_require_params $# "$*" 1 0
+        local dir_path=${1}
+        local response=false
+        if [ -d ${dir_path} ]
+        then
+            response=true
+        fi
+        echo ${response}
+    }
+
+    ##
+    # Create directory if it doesn't exist
+    #
+    # ${1} - directory with/without path
+    # return - none
+    ##
+    hm_directory_create_if_not_present() {
+        _hm_require_params $# "$*" 1 0
+        local dir_path=${1}
+        if [ ! -d ${dir_path} ]
+        then
+            mkdir ${dir_path}
+        fi
+    }
+
+    ##
+    # Get list of files in dir 
+    #
+    # ${1} - path to directory
+    # ${2} - constraint pattern (optional)
+    # return - array
+    ##
+    hm_get_files_in_directory() {
+        _hm_require_params $# "$*" 1 1
+        local response=$(ls -p ${1} | grep "${2}" | grep -v / )
+        echo ${response}
+    }
+
+    ##
+    # Get current working directory (directory that houses BASH entry point)
+    #
+    # return - string
+    ##
+    hm_get_working_directory() {
+        _hm_require_params $# "$*" 0 0
+        local platform=$(uname)
+        if [[ "${platform}" == "Darwin" ]]
+        then
+            _hm_require_dependency greadlink
+            scriptFilePath=$(greadlink -f $0)
+        else
+            scriptFilePath=$(readlink -f $0)
+        fi
+        local response=$(dirname ${scriptFilePath})
+        echo ${response}
+    }
+
+    ##
+    # Check list of dependencies
+    #
+    # ${1}..{} - list of program dependencies in main()
+    ##
+    hm_script_dependencies() {
+        for dependency in "${@}"
+        do
+            _hm_require_dependency ${dependency}
+        done
+    }
+
+    ##
+    # Execute callback to handle install if dependency doesn't exist
+    #
+    # ${1} - name of program
+    # ${2} - name of callback function nested in main()
+    ##
+    hm_script_dependency_with_callback() {
+        _hm_require_params $# "$*" 2 0
+        local dep_exists=$(_hm_require_dependency ${1} true)
+        if [ ! ${dep_exists} ];then
+            local response=$(${2})
+            echo ${response}
+        fi
+    }
+
+    ##
+    # Check for specific program and throw error if missing
+    #
+    # ${1} - name of program
+    # ${2} - return boolean instead of throwing error (optional)
+    ##
+    _hm_require_dependency() {
+        _hm_require_params $# "$*" 1 1
+        if ! hash ${1} 2>/dev/null; then
+            if [ ${2} ]; then
+                echo ''
+            else
+                _hm_throw_error "A required dependency isn't installed: ${1}"
+            fi
+        else
+            if [ ${2} ]; then echo true; fi
+        fi
+    }
+
+    ##
+    # Compare expected/received params for a function.
+    #
+    # ${1} - param count received ($#)
+    # ${2} - params passed
+    # ${3} - required param count expected
+    # ${4} - optional param count expected
+    #
+    ##
+    _hm_require_params() {
+        local allowed_params=$[ ${3} + ${4} ]
+        if [[  ${1} > ${allowed_params} ]]
+        then
+            _hm_throw_error "Passed ${1} params to: ${FUNCNAME[1]} but allows ${allowed_params}.\nParams passed: ${2}"
+        fi
+    }
+
+
+    ####################
+    ## Error Handling ##
+    ####################
+
+    ##
+    # Output error to the console, include call stack, and halt execution
+    #
+    # ${1} - error message
+    ##
+    _hm_throw_error() {
+        local hm_error
+        local stack_count=3
+        hm_error="${hm_error}Error! Halting execution.\n\n${1}\n\nCall stack:\n"
+        for func in "${FUNCNAME[@]}"
+        do
+            :
+            hm_error="${hm_error} ${stack_count}: ${func}\n"
+            stack_count=$[stack_count + 1]
+        done
+        echo ${hm_error}
+        exit 1
+    }
+
+    ##
+    # Kills the script
+    # Only called by hm_do() after output of error if non success response is received
+    ##
+    _hm_halt() {
+        kill ${PID}
+    }
+}
+
+##
+# Verify script was executed correctly, loads Henchman, and calls main()
+#
+##
+hm_bootstrap() {
+    if [[ $0 == */*  ]]
+    then
+        henchman
+        main
+    else
+        printf "\nError! Halting execution.\nCall script using: scriptname or ./scriptname\nNote: This is to ensure error handling for Henchman works correctly.\n\n"
+    fi
+}
+
+hm_bootstrap

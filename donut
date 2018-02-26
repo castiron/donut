@@ -2,7 +2,7 @@
 # Author - clark@castironcoding.com
 # Purpose - Generates daily backup with retention for 1 week. Eventually smooch will replace this.
 henchman_version="v1.2.4"
-henchman_location="/tmp"
+henchman_location="./lib/"
 henchman_debug=false
 main() {
     local working_dir
