@@ -11,7 +11,9 @@ main() {
     local config_files
     local donut_config
     local days_of_retention=7
+    local specific_backup_retention=0
     local today_date=$(date +"%m_%d_%Y")
+    local today_date_full=$(date +"%m_%d_%Y-%s")
     local drop_date
     local ondemand=false
 
@@ -60,15 +62,34 @@ main() {
     }
 
     for config_file in ${config_files[@]}; do
+        if [ ${config_file} == '.git-keep' ]
+        then
+            continue
+        fi
         local backup_file
+        local backup_file_list
+        local backup_file_array
+        local backup_file_count
         local drop_file
         source "${config_dir}/${config_file}"
         if [[ ${ondemand} == true ]]; then
             backup_file="${backup_dir}/${schema}_ONDEMAND_${today_date}.sql"
         else
-            backup_file="${backup_dir}/${schema}_${today_date}.sql"
-            drop_file="${backup_dir}/${schema}_${drop_date}.sql"
-            purge_old_backup ${drop_file}
+            if [ ${specific_backup_retention} -ne 0 ]
+            then
+                backup_file="${backup_dir}/${schema}_${today_date_full}.sql"
+                hm get_files_in_directory ${backup_dir} && backup_file_list=${hm_return}
+                backup_file_array=(${backup_file_list})
+                backup_file_count=${#backup_file_array[@]}
+                if [ ${backup_file_count} -gt ${specific_backup_retention} ]
+                then
+                    purge_old_backup "${backup_dir}/${backup_file_array[$(( ${backup_file_count} - 1 ))]}"
+                fi
+            else
+                backup_file="${backup_dir}/${schema}_${today_date}.sql"
+                drop_file="${backup_dir}/${schema}_${drop_date}.sql"
+                purge_old_backup ${drop_file}
+            fi
         fi
         case "${type}" in
             mysql)
