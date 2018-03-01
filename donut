@@ -28,7 +28,7 @@ main() {
     hm_do hm_file_create_if_not_present ${donut_config}
 
     if [[ "$OSTYPE" == "linux-gnu" ]]; then
-        drop_date=$(date +%m_%d_%Y -d "1 week ago")
+        drop_date=$(date +%m_%d_%Y -d "${days_of_retention} day ago")
     elif [[ "$OSTYPE" == "darwin"* ]]; then
         drop_date=$(date -r $[ $(date +%s) - (${days_of_retention} * (60*60*24))] +"%m_%d_%Y")
     else
