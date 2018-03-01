@@ -1,7 +1,7 @@
 #!/bin/bash
 # Author - clark@castironcoding.com
 # Purpose - Generates daily backup with retention for 1 week. Eventually smooch will replace this.
-henchman_version="v1.2.4"
+henchman_version="v2.0.1"
 henchman_location="./lib/"
 henchman_debug=false
 main() {
@@ -16,16 +16,16 @@ main() {
     local ondemand=false
 
 
-    hm_do hm_get_working_directory && working_dir=${hm_return}
+    hm get_working_directory && working_dir=${hm_return}
     config_dir="${working_dir}/config"
     backup_dir="${working_dir}/backup"
     donut_config="${working_dir}/.donut-config"
 
-    hm_do hm_get_files_in_directory ${config_dir} && config_files=${hm_return}
+    hm get_files_in_directory ${config_dir} && config_files=${hm_return}
     if [[ ${config_files[*]} == '' ]]; then echo "No config files found in ${config_dir}" && exit 1; fi
 
-    hm_do hm_directory_create_if_not_present ${backup_dir}
-    hm_do hm_file_create_if_not_present ${donut_config}
+    hm directory_create_if_not_present ${backup_dir}
+    hm file_create_if_not_present ${donut_config}
 
     if [[ "$OSTYPE" == "linux-gnu" ]]; then
         drop_date=$(date +%m_%d_%Y -d "${days_of_retention} day ago")

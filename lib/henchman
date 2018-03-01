@@ -18,8 +18,8 @@
 
 
 # Release Information
-# v1.2.4
-# Spurlock
+# v2.0.1
+# Mr. Kidd
 
 
 ###########
@@ -51,19 +51,29 @@ henchman() {
     # Wrapper that handles responses from Henchman functions
     #
     ##
-   hm_do() {
+   hm() {
         local response
         local response_code
         response=$($*)
         response_code=$?
-        if [ ${henchman_debug} == true ]; then echo -e "[HENCHMAN DEBUG]\nCall:\n hm_do $*\nResponse code: ${response_code}\nResponse:\n ${response}\n[/HENCHMAN DEBUG]"; fi
+        if [ ${henchman_debug} ]; then
+            if [ ${henchman_debug} == true ]; then echo -e "[HENCHMAN DEBUG]\nCall:\n hm_do $*\nResponse code: ${response_code}\nResponse:\n ${response}\n[/HENCHMAN DEBUG]"; fi
+        fi
         if [[ ${response_code} == 0 ]]
         then
             hm_return=${response}
         else
             echo -e ${response}
-            _hm_halt
+            _halt
         fi
+    }
+
+    ##
+    # Legacy wrapper for versions <= 1.2.5 (Spurlock)
+    #
+    ##
+    hm_do() {
+        hm ${*#hm_}
     }
 
 
@@ -77,8 +87,8 @@ henchman() {
     # ${1} - env var
     # return - boolean
     ##
-    hm_env_var_exist?() {
-        _hm_require_params $# "$*" 1 0
+    env_var_exist?() {
+        _require_params $# "$*" 1 0
         local env_var=${1}
         local response=false
         if [[ "${!env_var}" != "" ]]
@@ -95,8 +105,8 @@ henchman() {
     # ${1} - filename with/without path
     # return - boolean
     ##
-    hm_file_exist?() {
-        _hm_require_params $# "$*" 1 0
+    file_exist?() {
+        _require_params $# "$*" 1 0
         local file_path=${1}
         local response=false
         if [ -e ${file_path} ]
@@ -112,8 +122,8 @@ henchman() {
     # ${1} - filename with/without path
     # return - none
     ##
-    hm_file_create_if_not_present() {
-        _hm_require_params $# "$*" 1 0
+    file_create_if_not_present() {
+        _require_params $# "$*" 1 0
         local file_path=${1}
         if [ ! -e ${file_path} ]
         then
@@ -127,8 +137,8 @@ henchman() {
     # ${1} - directory with/without path
     # return - boolean
     ##
-    hm_directory_exist?() {
-        _hm_require_params $# "$*" 1 0
+    directory_exist?() {
+        _require_params $# "$*" 1 0
         local dir_path=${1}
         local response=false
         if [ -d ${dir_path} ]
@@ -144,8 +154,8 @@ henchman() {
     # ${1} - directory with/without path
     # return - none
     ##
-    hm_directory_create_if_not_present() {
-        _hm_require_params $# "$*" 1 0
+    directory_create_if_not_present() {
+        _require_params $# "$*" 1 0
         local dir_path=${1}
         if [ ! -d ${dir_path} ]
         then
@@ -154,15 +164,59 @@ henchman() {
     }
 
     ##
-    # Get list of files in dir 
+    # Get absolute path of file or directory
+    #
+    # ${1} - path containing relative paths
+    # return - string
+    ##
+    get_absolute_path() {
+        _require_params $# "$*" 1 0
+        local platform=$(uname)
+        if [[ "${platform}" == "Darwin" ]]
+        then
+            local response=$(greadlink -f "${1}")
+        else
+            local response=$(readlink -f "${1}")
+        fi
+        echo ${response}
+    }
+
+    ##
+    # Get list of contents in dir
     #
     # ${1} - path to directory
     # ${2} - constraint pattern (optional)
     # return - array
     ##
-    hm_get_files_in_directory() {
-        _hm_require_params $# "$*" 1 1
-        local response=$(ls -p ${1} | grep "${2}" | grep -v / )
+    get_contents_in_directory() {
+        _require_params $# "$*" 1 1
+        local response=$(ls -ap ${1} | grep "${2}" | grep -v "\./" | grep -v "\../")
+        echo ${response}
+    }
+
+    ##
+    # Get list of directories in dir
+    #
+    # ${1} - path to directory
+    # ${2} - constraint pattern (optional)
+    # return - array
+    ##
+    get_directories_in_directory() {
+        _require_params $# "$*" 1 1
+        local response=$(ls -p ${1} | grep "${2}" | grep / )
+        echo ${response}
+    }
+
+    ##
+    # Get list of files in dir
+    #
+    # ${1} - path to directory
+    # ${2} - constraint pattern (optional)
+    # return - array
+    ##
+    get_files_in_directory() {
+        _require_params $# "$*" 1 1
+        local response=$(ls -ap ${1} | grep "${2}" | grep -v / )
         echo ${response}
     }
 
@@ -171,12 +225,12 @@ henchman() {
     #
     # return - string
     ##
-    hm_get_working_directory() {
-        _hm_require_params $# "$*" 0 0
+    get_working_directory() {
+        _require_params $# "$*" 0 0
         local platform=$(uname)
         if [[ "${platform}" == "Darwin" ]]
         then
-            _hm_require_dependency greadlink
+            _require_dependency greadlink
             scriptFilePath=$(greadlink -f $0)
         else
             scriptFilePath=$(readlink -f $0)
@@ -190,10 +244,10 @@ henchman() {
     #
     # ${1}..{} - list of program dependencies in main()
     ##
-    hm_script_dependencies() {
+    script_dependencies() {
         for dependency in "${@}"
         do
-            _hm_require_dependency ${dependency}
+            _require_dependency ${dependency}
         done
     }
 
@@ -203,9 +257,9 @@ henchman() {
     # ${1} - name of program
     # ${2} - name of callback function nested in main()
     ##
-    hm_script_dependency_with_callback() {
-        _hm_require_params $# "$*" 2 0
-        local dep_exists=$(_hm_require_dependency ${1} true)
+    script_dependency_with_callback() {
+        _require_params $# "$*" 2 0
+        local dep_exists=$(_require_dependency ${1} true)
         if [ ! ${dep_exists} ];then
             local response=$(${2})
             echo ${response}
@@ -218,13 +272,13 @@ henchman() {
     # ${1} - name of program
     # ${2} - return boolean instead of throwing error (optional)
     ##
-    _hm_require_dependency() {
-        _hm_require_params $# "$*" 1 1
+    _require_dependency() {
+        _require_params $# "$*" 1 1
         if ! hash ${1} 2>/dev/null; then
             if [ ${2} ]; then
                 echo ''
             else
-                _hm_throw_error "A required dependency isn't installed: ${1}"
+                _throw_error "[!! DEPENDENCY MISSING !!]\nThe following is required but wasn't detected: ${1}\n\n"
             fi
         else
             if [ ${2} ]; then echo true; fi
@@ -240,11 +294,11 @@ henchman() {
     # ${4} - optional param count expected
     #
     ##
-    _hm_require_params() {
+    _require_params() {
         local allowed_params=$[ ${3} + ${4} ]
         if [[  ${1} > ${allowed_params} ]]
         then
-            _hm_throw_error "Passed ${1} params to: ${FUNCNAME[1]} but allows ${allowed_params}.\nParams passed: ${2}"
+            _throw_error "Passed ${1} params to: ${FUNCNAME[1]} but allows ${allowed_params}.\nParams passed: ${2}"
         fi
     }
 
@@ -258,10 +312,10 @@ henchman() {
     #
     # ${1} - error message
     ##
-    _hm_throw_error() {
+    _throw_error() {
         local hm_error
         local stack_count=3
-        hm_error="${hm_error}Error! Halting execution.\n\n${1}\n\nCall stack:\n"
+        hm_error="${hm_error}[!! ERROR OCCURRED !!]\nHalting execution of script: ${0}\n\n${1}\n\nCall stack:\n"
         for func in "${FUNCNAME[@]}"
         do
             :
@@ -276,7 +330,7 @@ henchman() {
     # Kills the script
     # Only called by hm_do() after output of error if non success response is received
     ##
-    _hm_halt() {
+    _halt() {
         kill ${PID}
     }
 }
@@ -291,7 +345,7 @@ hm_bootstrap() {
         henchman
         main
     else
-        printf "\nError! Halting execution.\nCall script using: scriptname or ./scriptname\nNote: This is to ensure error handling for Henchman works correctly.\n\n"
+        printf "\n[!! ERROR !!]\nHalting execution of script: ${0}\n\nCall script using: scriptname or ./scriptname\nNote: This is to ensure error handling for Henchman works correctly.\n\n"
     fi
 }
 
