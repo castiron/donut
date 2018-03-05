@@ -81,7 +81,7 @@ main() {
                 hm get_files_in_directory ${backup_dir} && backup_file_list=${hm_return}
                 backup_file_array=(${backup_file_list})
                 backup_file_count=${#backup_file_array[@]}
-                if [ ${backup_file_count} -gt ${specific_backup_retention} ]
+                if [ ${backup_file_count} -ge ${specific_backup_retention} ]
                 then
                     purge_old_backup "${backup_dir}/${backup_file_array[$(( ${backup_file_count} - 1 ))]}"
                 fi
