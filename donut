@@ -1,7 +1,7 @@
 #!/bin/bash
 # Author - clark@castironcoding.com
 # Purpose - Generates daily backup with retention for 1 week. Eventually smooch will replace this.
-henchman_version="v2.0.1"
+henchman_version="v2.0.2"
 henchman_location="./lib/"
 henchman_debug=false
 main() {

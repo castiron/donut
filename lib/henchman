@@ -18,7 +18,7 @@
 
 
 # Release Information
-# v2.0.1
+# v2.0.2
 # Mr. Kidd
 
 
@@ -208,7 +208,7 @@ henchman() {
     }
 
     ##
-    # Get list of files in dir
+    # Get list of files in dir ordered by date descending
     #
     # ${1} - path to directory
     # ${2} - constraint pattern (optional)
@@ -216,7 +216,7 @@ henchman() {
     ##
     get_files_in_directory() {
         _require_params $# "$*" 1 1
-        local response=$(ls -ap ${1} | grep "${2}" | grep -v / )
+        local response=$(ls -apt ${1} | grep "${2}" | grep -v / )
         echo ${response}
     }
 
