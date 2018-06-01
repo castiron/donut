@@ -1,0 +1,47 @@
+#!/bin/bash
+# Author - clark@castironcoding.com
+# Purpose - Setup of donut dirs and configuration
+# Note - This assumes you are working inside of a specific release directory after extracting a release downloaded from
+# GitHub. Meaning you should setup a wrapper dir structure such as: ..../donut/donut-1.0.6/[this script]
+henchman_version="v2.0.2"
+henchman_location="./lib/"
+henchman_debug=false
+main() {
+    local release_dir
+    local setup_dir
+
+    hm get_working_directory && release_dir=${hm_return}
+
+    if [ -L 'config' ]; then rm config; fi
+    if [ -L 'backup' ]; then rm backup; fi
+    if [ -L '.donut-config' ]; then rm .donut-config; fi
+
+    cd ../
+
+    setup_dir=$(pwd)
+
+    if [ -L 'current' ]; then rm current; fi
+
+    ln -s ${release_dir} current
+
+    if [ ! -d 'config' ]; then mkdir config; fi
+
+    if [ ! -d 'backup' ]; then mkdir backup; fi
+
+    if [ ! -f '.donut-config' ]
+    then
+        touch .donut-config
+        echo '# donut script defaults to days_of_retention=7 unless one of these are set:' >> .donut-config
+        echo '#specific_backup_retention=' >> .donut-config
+        echo '#days_of_retention=' >> .donut-config
+    fi
+
+    cd ${release_dir}
+
+    ln -s "${setup_dir}/config" config
+    ln -s "${setup_dir}/backup" backup
+    ln -s "${setup_dir}/.donut-config" .donut-config
+
+}
+henchman_load() { local hm_url="https://raw.githubusercontent.com/castiron/henchman/${henchman_version}/henchman";local hm_local_file="${henchman_location}/henchman-${henchman_version}";echo -e "Attempting to fetch Henchman ${henchman_version}\n";if [ -e ${hm_local_file} ];then echo -e "Henchman ${henchman_version} is ready for action.";else if hash curl 2>/dev/null;then curl ${hm_url} -o ${hm_local_file};elif hash wget 2>/dev/null;then wget ${hm_url} -O ${hm_local_file};else echo "Error! curl or wget required to fetch Henchman.";fi;fi;source ${hm_local_file}; }
+henchman_load $@
