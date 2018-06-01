@@ -57,8 +57,8 @@ main() {
             echo "Must set either backup retention or days of retention, not both." && exit 1;
         fi
 
-        if [ ${specific_backup_retention} -ge 1 ]; then retention_type=RETENTION_TYPE_SPECIFIC; fi
-        if [ ${days_of_retention} -ge 1 ]; then retention_type=RETENTION_TYPE_DAY; fi
+        if [ ${specific_backup_retention} -ge 1 ]; then retention_type=${RETENTION_TYPE_SPECIFIC}; fi
+        if [ ${days_of_retention} -ge 1 ]; then retention_type=${RETENTION_TYPE_DAY}; fi
 
 
         hm directory_create_if_not_present ${backup_dir}
