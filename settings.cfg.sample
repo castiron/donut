@@ -1,5 +1,0 @@
-backupFileName='replace_with_filename' # Dump filename (Note: Don't add a file extension)
-dbHost='localhost' # Database host
-dbUser='replace_with_username' # Database user (Note: This user needs certain privileges in order to use mysqldump)
-dbPass='replace_with_password' # Database password
-dbName='replace_with_database' # Database password
