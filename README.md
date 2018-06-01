@@ -35,6 +35,10 @@ Extract release
 Run setup inside the release dir
 `cd donut-1.0.7 && ./setup`
 
+_Alternative combined approach_
+
+`mkdir donut && cd donut && wget https://github.com/rclarkburns/donut/archive/1.0.7.tar.gz && tar -xf 1.0.7.tar.gz && cd donut-1.0.7 && ./setup && cd -`
+
 Update configuration if desired (defaults to 7 days of retention assuming execution occurs daily)
 `vim /some/path/donut/.donut-config`
 
