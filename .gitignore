@@ -7,3 +7,4 @@
 config/*
 backup/*
 .donut-config
+.donut-tmp-config
