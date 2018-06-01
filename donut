@@ -5,13 +5,18 @@ henchman_version="v2.0.2"
 henchman_location="./lib/"
 henchman_debug=false
 main() {
+    local RETENTION_TYPE_DAY=0
+    local RETENTION_TYPE_SPECIFIC=1
+
     local working_dir
     local config_dir
     local backup_dir
     local config_files
     local donut_config
-    local days_of_retention=7
-    local specific_backup_retention=0
+    local tmp_db_config
+    local days_of_retention
+    local specific_backup_retention
+    local retention_type
     local today_date=$(date +"%m_%d_%Y")
     local today_date_full=$(date +"%m_%d_%Y-%s")
     local drop_date
@@ -22,34 +27,56 @@ main() {
     config_dir="${working_dir}/config"
     backup_dir="${working_dir}/backup"
     donut_config="${working_dir}/.donut-config"
+    tmp_db_config="${working_dir}/.donut-tmp-config"
 
     hm get_files_in_directory ${config_dir} && config_files=${hm_return}
     if [[ ${config_files[*]} == '' ]]; then echo "No config files found in ${config_dir}" && exit 1; fi
 
-    hm directory_create_if_not_present ${backup_dir}
-    hm file_create_if_not_present ${donut_config}
-
-    if [[ "$OSTYPE" == "linux-gnu" ]]; then
-        drop_date=$(date +%m_%d_%Y -d "${days_of_retention} day ago")
-    elif [[ "$OSTYPE" == "darwin"* ]]; then
-        drop_date=$(date -r $[ $(date +%s) - (${days_of_retention} * (60*60*24))] +"%m_%d_%Y")
+    if [  ${main_params_count} -gt 0 ]
+    then
+        if [[ ${main_params[0]} == 'ondemand' ]]
+        then
+            echo "Creating ondemand backup(s)."
+            ondemand=true
+        else
+            echo "Gibberish. ${main_params[0]} is not a valid argument."
+            echo "Pass 'ondemand' as an argument for instant backup(s)."
+            exit 1
+        fi
     else
-        echo "${OSTYPE} is not supported."
-        exit 1
-    fi
+        source ${donut_config}
 
-     if [  ${main_params_count} -gt 0 ]
-     then
-         if [[ ${main_params[0]} == 'ondemand' ]]
-         then
-             echo "Creating ondemand backup(s)."
-             ondemand=true
-         else
-             echo "Gibberish. ${main_params[0]} is not a valid argument."
-             echo "Pass 'ondemand' as an argument for instant backup(s)."
-             exit 1
-         fi
-     fi
+        if [ ${specific_backup_retention} -gte 1 ] && [ ${days_of_retention} -gte 1 ]
+        then
+            echo "Must set either backup retention or days of retention, not both." && exit 1;
+        fi
+
+        if [ -z "${specific_backup_retention}" ] && [ -z "${days_of_retention}" ]
+        then
+            days_of_retention=7
+            specific_backup_retention=0
+        fi
+
+        if [ ${specific_backup_retention} -gte 1 ]; then retention_type=RETENTION_TYPE_SPECIFIC; fi
+        if [ ${days_of_retention} -gte 1 ]; then retention_type=RETENTION_TYPE_DAY; fi
+
+
+        hm directory_create_if_not_present ${backup_dir}
+        hm file_create_if_not_present ${tmp_db_config}
+
+        if [[ "${retention_type}" == "${RETENTION_TYPE_DAY}" ]]
+        then
+            if [[ "$OSTYPE" == "linux-gnu" ]]
+            then
+                drop_date=$(date +%m_%d_%Y -d "${days_of_retention} day ago")
+            elif [[ "$OSTYPE" == "darwin"* ]]; then
+                drop_date=$(date -r $[ $(date +%s) - (${days_of_retention} * (60*60*24))] +"%m_%d_%Y")
+            else
+                echo "${OSTYPE} is not supported."
+                exit 1
+            fi
+        fi
+    fi
 
 
     purge_old_backup() {
@@ -75,7 +102,7 @@ main() {
         if [[ ${ondemand} == true ]]; then
             backup_file="${backup_dir}/${schema}_ONDEMAND_${today_date}.sql"
         else
-            if [ ${specific_backup_retention} -ne 0 ]
+            if [[ "${retention_type}" == "${RETENTION_TYPE_SPECIFIC}" ]]
             then
                 backup_file="${backup_dir}/${schema}_${today_date_full}.sql"
                 hm get_files_in_directory ${backup_dir} && backup_file_list=${hm_return}
@@ -93,9 +120,9 @@ main() {
         fi
         case "${type}" in
             mysql)
-                echo -e "[CLIENT]\npassword=${password}" > ${donut_config}
-                mysqldump --defaults-extra-file=${donut_config} -h${host} -u${user} ${schema} > ${backup_file}
-                echo "" > ${donut_config}
+                echo -e "[CLIENT]\npassword=${password}" > ${tmp_db_config}
+                mysqldump --defaults-extra-file=${tmp_db_config} -h${host} -u${user} ${schema} > ${backup_file}
+                echo "" > ${tmp_db_config}
                 ;;
             postgresql)
                 pg_dump -h${host} -U${user} --no-password  ${schema} > ${backup_file}
