@@ -128,7 +128,7 @@ main() {
                 echo "" > ${tmp_db_config}
                 ;;
             postgresql)
-                pg_dump -h${host} -U${user} --no-password  ${schema} > ${backup_file}
+                pg_dump -U${user} --no-password  ${schema} > ${backup_file}
                 ;;
             *)
                 echo "Unknown database type: ${type}"
