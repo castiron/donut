@@ -2,7 +2,7 @@
 # Author - clark@castironcoding.com
 # Purpose - Setup of donut dirs and configuration
 # Note - This assumes you are working inside of a specific release directory after extracting a release downloaded from
-# GitHub. Meaning you should setup a wrapper dir structure such as: ..../donut/donut-1.0.6/[this script]
+# GitHub. Meaning you should setup a wrapper dir structure such as: ..../donut/donut-1.0.9/[this script]
 henchman_version="v2.0.2"
 henchman_location="./lib/"
 henchman_debug=false
