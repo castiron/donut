@@ -85,8 +85,7 @@ CONFIG
 
     echo "All done."
     echo "If you haven't configured the cron job yet give this a go:"
-    current_path=$(cd current && pwd)
-    echo "0 3 * * * cd ${current_path} && ./donut"
+    echo "0 3 * * * cd $(pwd) && ./donut"
 }
 henchman_load() { local hm_url="https://raw.githubusercontent.com/castiron/henchman/${henchman_version}/henchman";local hm_local_file="${henchman_location}/henchman-${henchman_version}";echo -e "Attempting to fetch Henchman ${henchman_version}\n";if [ -e ${hm_local_file} ];then echo -e "Henchman ${henchman_version} is ready for action.";else if hash curl 2>/dev/null;then curl ${hm_url} -o ${hm_local_file};elif hash wget 2>/dev/null;then wget ${hm_url} -O ${hm_local_file};else echo "Error! curl or wget required to fetch Henchman.";fi;fi;source ${hm_local_file}; }
 henchman_load $@
