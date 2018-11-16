@@ -1,0 +1,92 @@
+#!/bin/bash
+# Author - clark@castironcoding.com
+# Purpose - Add configuration files easily using prompts.
+# Note - This assumes you have already run the setup script and are inside a release dir
+henchman_version="v2.0.2"
+henchman_location="./lib/"
+henchman_debug=false
+main() {
+    local release_dir
+    local setup_dir
+    local config_file
+
+    local database
+    local database_host
+    local database_schema
+    local database_user
+    local database_password
+
+    hm get_working_directory && release_dir=${hm_return}
+
+    echo "Name of the config file to create (typically name of schema):"
+    read config_filename
+    config_file="config/${config_filename}"
+
+    if [ -f ${config_file} ];
+    then
+        echo "This config file already exists. Goodbye."
+        exit 1
+    fi
+
+    echo "MySQL or PostgreSQL? [m/p]:"
+    read database_type
+    case ${database_type} in
+        'm')
+            echo "You selected MySQL."
+            database='mysql'
+            ;;
+        'p')
+            echo "You selected PostgreSQL."
+            database='postgresql'
+            ;;
+         *)
+            echo "Must enter either 'm' or 'p'. Goodbye."
+            exit 1
+            ;;
+    esac
+
+    echo "Database host:"
+    read database_host
+
+    echo "Database schema:"
+    read database_schema
+
+    echo "Database user:"
+    read database_user
+
+    echo "Database password:"
+    read -s database_password
+
+cat << CONFIG
+type=${database}
+host=${database_host}
+schema=${database_schema}
+user=${database_user}
+password=************
+CONFIG
+
+    echo -e "\nDoes that look OK? ('y' will continue the experience)\n"
+
+    read -s -n 1 confirmation
+    if [[ "${confirmation}" == "y" || "${confirmation}" == "Y" ]]
+    then
+        touch ${config_file}
+cat << CONFIG > ${config_file}
+type=${database}
+host=${database_host}
+schema=${database_schema}
+user=${database_user}
+password="${database_password}"
+CONFIG
+    else
+        echo "Aborting. Goodbye."
+        exit 1
+    fi
+
+    echo "All done."
+    echo "If you haven't configured the cron job yet give this a go:"
+    current_path=$(cd current && pwd)
+    echo "0 3 * * * cd ${current_path} && ./donut"
+}
+henchman_load() { local hm_url="https://raw.githubusercontent.com/castiron/henchman/${henchman_version}/henchman";local hm_local_file="${henchman_location}/henchman-${henchman_version}";echo -e "Attempting to fetch Henchman ${henchman_version}\n";if [ -e ${hm_local_file} ];then echo -e "Henchman ${henchman_version} is ready for action.";else if hash curl 2>/dev/null;then curl ${hm_url} -o ${hm_local_file};elif hash wget 2>/dev/null;then wget ${hm_url} -O ${hm_local_file};else echo "Error! curl or wget required to fetch Henchman.";fi;fi;source ${hm_local_file}; }
+henchman_load $@
