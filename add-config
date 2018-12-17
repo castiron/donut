@@ -45,7 +45,7 @@ main() {
             ;;
     esac
 
-    echo "Database host:"
+    echo "Database host (leave blank if using PostgreSQL on this host):"
     read database_host
 
     echo "Database schema:"
