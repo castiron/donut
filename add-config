@@ -54,7 +54,7 @@ main() {
     echo "Database user:"
     read database_user
 
-    echo "Database password:"
+    echo "Database password (use .pgpass if using PostgreSQL but supply arbitrary value here):"
     read -s database_password
 
 cat << CONFIG
