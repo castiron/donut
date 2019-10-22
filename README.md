@@ -27,7 +27,7 @@ Create a directory to house releases and configuration such as
 `mkdir /some/path/donut && cd /some/path/donut`
 
 Download the latest release
-`wget https://github.com/rclarkburns/donut/archive/1.0.10.tar.gz`
+`wget https://github.com/castiron/donut/archive/1.0.10.tar.gz`
 
 Extract release
 `tar -xf 1.0.10.tar.gz`
