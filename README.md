@@ -93,8 +93,10 @@ user=
 password=
 ```
 
+When using postgresql, password must be supplied with a `~/.pgpass` file, which will be a bit redundant.
+
 Note: The actual file name and extension are arbitrary. Donut will loop through the `config/` directory and attempt to 
-use each file as config.
+use each file as config. Makes the most sense to name the file the same as the schema.
 
 You can run the script manually to test your configuration: `./donut`
 
