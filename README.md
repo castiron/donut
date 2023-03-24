@@ -55,6 +55,7 @@ host=
 schema=
 user=
 password=
+port=
 ```
 
 or
@@ -65,7 +66,10 @@ host=
 schema=
 user=
 password=
+port=
 ```
+
+Note that `port` is optional and will default to the default port for the database.
 
 Setup cronjob to run daily
 `crontab -e`
