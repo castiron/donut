@@ -124,7 +124,7 @@ main() {
         case "${type}" in
             mysql)
                 echo -e "[CLIENT]\npassword=${password}" > ${tmp_db_config}
-                mysqldump --defaults-extra-file=${tmp_db_config} -h${host} -u${user} ${schema} > ${backup_file}
+                mysqldump --defaults-extra-file=${tmp_db_config} -h${host} -P${port:=3306} -u${user} ${schema} > ${backup_file}
                 echo "" > ${tmp_db_config}
                 ;;
             postgresql)
@@ -134,9 +134,9 @@ main() {
                     password=""
                 fi
                 if [ -z ${host} ]; then
-                    pg_dump -U${user} ${password} ${schema} > ${backup_file}
+                    pg_dump -U${user} -p${port:=5432} ${password} ${schema} > ${backup_file}
                 else
-                    pg_dump -h${host} -U${user} ${password} ${schema} > ${backup_file}
+                    pg_dump -h${host} -p${port:=5432} -U${user} ${password} ${schema} > ${backup_file}
                 fi
                 ;;
             *)
