@@ -124,7 +124,7 @@ main() {
         case "${type}" in
             mysql)
                 echo -e "[CLIENT]\npassword=${password}" > ${tmp_db_config}
-                mysqldump --defaults-extra-file=${tmp_db_config} --set-gtid-purged=OFF -h${host} -P${port:=3306} -u${user} ${schema} > ${backup_file}
+                mysqldump --defaults-extra-file=${tmp_db_config} --set-gtid-purged=OFF --no-tablespaces -h${host} -P${port:=3306} -u${user} ${schema} > ${backup_file}
                 echo "" > ${tmp_db_config}
                 ;;
             postgresql)
